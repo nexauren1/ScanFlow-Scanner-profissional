@@ -8,8 +8,8 @@ ScanFlow is an Android document-scanning and document-management app built with 
 - Five-section navigation: Home, Scanner, Files, Tools, Profile.
 - Dark and light themes.
 - Portuguese and English interface labels.
-- CameraX live camera preview and photo capture.
-- Local document import through Android's document picker.
+- CameraX live camera preview, photo capture, flash control and front/rear camera switching.
+- Gallery image import and Android document picker.
 - Private app-local copy of imported and captured documents.
 - Local document list, search, favorites, delete, and open/share actions.
 - Tools catalogue with clear availability states.
@@ -26,15 +26,24 @@ The current base is deliberately offline-first. There is no AI service, account 
 
 ## Build
 
-Open this repository in a recent Android Studio installation with JDK 17 or newer and Android SDK 36 installed. Let Gradle sync, then run the app configuration on a device or emulator.
+Open this repository in Android Studio with JDK 17 or newer and Android SDK 36 installed. Let Gradle sync, then run the app configuration on a device or emulator.
 
-The repository includes the Gradle wrapper distribution configuration. If the wrapper scripts/JAR are not present in a local checkout, generate them once with the command: gradle wrapper --gradle-version 9.6.0.
+On macOS/Linux, build a debug APK with:
+
+    ./gradlew :app:assembleDebug
+
+On Windows:
+
+    gradlew.bat :app:assembleDebug
+
+The APK is generated at app/build/outputs/apk/debug/app-debug.apk.
 
 ## Important implementation notes
 
 - Imported files are copied into the app-private Documents directory; the app does not request broad storage access.
 - Camera permission is requested only when the Scanner screen is opened.
-- The first implementation provides the product shell and real capture/import flows. OCR, PDF page editing/merging/compression, image enhancement, signature placement, vault encryption, and QR/barcode generation are the next feature modules and are not represented as completed functionality yet.
+- The current implementation provides the product shell and real capture/import flows. OCR, PDF page editing/merging/compression, image enhancement, signature placement, vault encryption, and QR/barcode generation are the next feature modules and are not represented as completed functionality yet.
+- The document index is currently local metadata storage; Room migration and media thumbnail indexing can be introduced as the library grows.
 - Before public release, complete device testing, privacy disclosures, security review, PDF library license review, and Google Play policy checks.
 
 ## Project identity
