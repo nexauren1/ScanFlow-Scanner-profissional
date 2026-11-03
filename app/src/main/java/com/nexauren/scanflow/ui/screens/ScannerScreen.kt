@@ -187,11 +187,17 @@ fun ScannerScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
-                    selected = true,
-                    onClick = {},
-                    label = { Text(tr(language, "Documento", "Document")) }
-                )
+                Surface(
+                    shape = RoundedCornerShape(30.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        tr(language, "Documento", "Document"),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
                 Spacer(Modifier.width(8.dp))
                 FilterChip(
                     selected = false,
@@ -298,12 +304,7 @@ private fun CameraPreview(
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
                     provider.unbindAll()
-                    provider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        preview,
-                        capture
-                    )
+                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture)
                     currentOnReady(capture)
                 } catch (_: Exception) {
                     currentOnError()

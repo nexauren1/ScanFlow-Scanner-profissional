@@ -1,6 +1,7 @@
 package com.nexauren.scanflow.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -240,7 +241,7 @@ fun HomeScreen(
                             tr(language, "Importar ficheiro", "Import file"),
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.clickable { onImport() }.padding(top = 4.dp)
                         )
                     }
                 }
