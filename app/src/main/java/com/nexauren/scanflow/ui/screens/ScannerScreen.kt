@@ -2,6 +2,7 @@ package com.nexauren.scanflow.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -26,10 +27,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,6 +64,7 @@ import java.io.File
 fun ScannerScreen(
     language: String,
     onCaptureSaved: (File) -> Unit,
+    onImagePicked: (Uri) -> Unit,
     onStatus: (String, String) -> Unit
 ) {
     val context = LocalContext.current
@@ -73,11 +76,15 @@ fun ScannerScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { cameraGranted = it }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> if (uri != null) onImagePicked(uri) }
 
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var flashEnabled by remember { mutableStateOf(false) }
     var capturing by remember { mutableStateOf(false) }
     var previewFailed by remember { mutableStateOf(false) }
+    var useFrontCamera by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
@@ -131,6 +138,7 @@ fun ScannerScreen(
                     .background(Color(0xFF09111D))
             ) {
                 CameraPreview(
+                    cameraSelector = if (useFrontCamera) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA,
                     onReady = {
                         imageCapture = it
                         it.flashMode = if (flashEnabled) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
@@ -203,8 +211,8 @@ fun ScannerScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { onStatus("A importação da galeria será integrada numa próxima etapa.", "Gallery import will be integrated in a later stage.") }) {
-                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(onClick = { galleryLauncher.launch("image/*") }) {
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = tr(language, "Galeria", "Gallery"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.width(28.dp))
                 Button(
@@ -245,8 +253,12 @@ fun ScannerScreen(
                     }
                 }
                 Spacer(Modifier.width(28.dp))
-                IconButton(onClick = { onStatus("A troca de câmara será adicionada numa próxima etapa.", "Camera switching will be added in a later stage.") }) {
-                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(onClick = {
+                    useFrontCamera = !useFrontCamera
+                    imageCapture = null
+                    previewFailed = false
+                }) {
+                    Icon(Icons.Filled.Cameraswitch, contentDescription = tr(language, "Trocar câmara", "Switch camera"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -255,6 +267,7 @@ fun ScannerScreen(
 
 @Composable
 private fun CameraPreview(
+    cameraSelector: CameraSelector,
     onReady: (ImageCapture) -> Unit,
     onError: () -> Unit
 ) {
@@ -269,33 +282,37 @@ private fun CameraPreview(
     val currentOnReady by rememberUpdatedState(onReady)
     val currentOnError by rememberUpdatedState(onError)
 
-    DisposableEffect(lifecycleOwner, previewView) {
+    DisposableEffect(lifecycleOwner, previewView, cameraSelector) {
         var cameraProvider: ProcessCameraProvider? = null
+        var disposed = false
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
-            try {
-                val provider = future.get()
-                cameraProvider = provider
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
+            if (!disposed) {
+                try {
+                    val provider = future.get()
+                    cameraProvider = provider
+                    val preview = Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+                    val capture = ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .build()
+                    provider.unbindAll()
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        capture
+                    )
+                    currentOnReady(capture)
+                } catch (_: Exception) {
+                    currentOnError()
                 }
-                val capture = ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .build()
-                provider.unbindAll()
-                provider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    capture
-                )
-                currentOnReady(capture)
-            } catch (_: Exception) {
-                currentOnError()
             }
         }, ContextCompat.getMainExecutor(context))
 
         onDispose {
+            disposed = true
             cameraProvider?.unbindAll()
         }
     }

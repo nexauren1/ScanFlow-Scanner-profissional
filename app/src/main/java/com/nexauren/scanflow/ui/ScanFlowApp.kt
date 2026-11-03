@@ -3,6 +3,7 @@ package com.nexauren.scanflow.ui
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,13 +88,17 @@ fun ScanFlowApp() {
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                val document = store.importUri(uri)
-                if (document != null) {
-                    store.insert(document)
-                    snackbar.showSnackbar(tr(language, "Documento importado com sucesso.", "Document imported successfully."))
-                } else {
-                    snackbar.showSnackbar(tr(language, "Não foi possível importar este ficheiro.", "Could not import this file."))
-                }
+                importUri(uri, store, language, snackbar)
+            }
+        }
+    }
+
+    val galleryImport = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                importUri(uri, store, language, snackbar)
             }
         }
     }
@@ -186,6 +191,7 @@ fun ScanFlowApp() {
                         onScan = { activeTab = AppTab.Scanner },
                         onImport = ::startImport,
                         onOpenDocuments = { activeTab = AppTab.Files },
+                        onOpenTools = { activeTab = AppTab.Tools },
                         onOpenDocument = ::openDocument,
                         onFavorite = store::toggleFavorite
                     )
@@ -194,6 +200,9 @@ fun ScanFlowApp() {
                         onCaptureSaved = { file ->
                             store.addCapturedFile(file)
                             scope.launch { snackbar.showSnackbar(tr(language, "Digitalização guardada.", "Scan saved.")) }
+                        },
+                        onImagePicked = { uri ->
+                            scope.launch { importUri(uri, store, language, snackbar) }
                         },
                         onStatus = { pt, en ->
                             scope.launch { snackbar.showSnackbar(tr(language, pt, en)) }
@@ -234,5 +243,20 @@ fun ScanFlowApp() {
                 }
             }
         }
+    }
+}
+
+private suspend fun importUri(
+    uri: Uri,
+    store: DocumentStore,
+    language: String,
+    snackbar: SnackbarHostState
+) {
+    val document = store.importUri(uri)
+    if (document != null) {
+        store.insert(document)
+        snackbar.showSnackbar(tr(language, "Documento importado com sucesso.", "Document imported successfully."))
+    } else {
+        snackbar.showSnackbar(tr(language, "Não foi possível importar este ficheiro.", "Could not import this file."))
     }
 }

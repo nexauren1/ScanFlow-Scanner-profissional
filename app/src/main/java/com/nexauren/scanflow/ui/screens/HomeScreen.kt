@@ -49,6 +49,7 @@ fun HomeScreen(
     onScan: () -> Unit,
     onImport: () -> Unit,
     onOpenDocuments: () -> Unit,
+    onOpenTools: () -> Unit,
     onOpenDocument: (ScanDocument) -> Unit,
     onFavorite: (ScanDocument) -> Unit
 ) {
@@ -63,13 +64,13 @@ fun HomeScreen(
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text("ScanFlow", style = MaterialTheme.typography.titleLarge)
                     Text(
-                        tr(language, "Scan. Organize. Transform.", "Scan. Organize. Transform."),
+                        "Scan. Organize. Transform.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
                 Text(
-                    tr(language, "PRO", "PRO"),
+                    "PRO",
                     color = Color(0xFF57D8FF),
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier
@@ -172,7 +173,7 @@ fun HomeScreen(
             SectionHeading(
                 title = tr(language, "Acesso rápido", "Quick access"),
                 action = tr(language, "Mais", "More"),
-                onAction = onImport
+                onAction = onOpenTools
             )
         }
 
@@ -197,14 +198,14 @@ fun HomeScreen(
                     icon = Icons.Filled.TextFields,
                     label = "OCR",
                     color = Color(0xFF21B99B),
-                    onClick = onImport
+                    onClick = onOpenTools
                 )
                 QuickTool(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Filled.QrCode2,
                     label = "QR",
                     color = Color(0xFF27BFEA),
-                    onClick = onImport
+                    onClick = onOpenTools
                 )
             }
         }
